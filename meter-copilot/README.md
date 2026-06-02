@@ -4,6 +4,11 @@
 
 详细设计见：[docs/项目设计-表计采集健康小助手.md](../docs/项目设计-表计采集健康小助手.md)
 
+## 在本机 G:\ 安装（Windows）
+
+见 **[本机安装-G盘.md](./本机安装-G盘.md)**。最快方式：在 PowerShell 执行 `G:\setup-windows.ps1`（默认安装到 `G:\meter-copilot`）。
+
+
 ## 快速开始
 
 ```bash
