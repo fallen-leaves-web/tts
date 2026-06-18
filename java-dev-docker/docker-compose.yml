@@ -1,0 +1,91 @@
+# Java 常见开发中间件 — Apple Silicon (arm64) 友好
+# 用法见 README.md
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: java-mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dev123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app_db}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-sql:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-dev123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: java-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-dev123456}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-dev123456}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 以下服务需要时：docker compose --profile full up -d
+  nacos:
+    profiles: ["full"]
+    image: nacos/nacos-server:v2.3.2
+    container_name: java-nacos
+    restart: unless-stopped
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+    environment:
+      MODE: standalone
+      TZ: Asia/Shanghai
+    volumes:
+      - nacos_data:/home/nacos/data
+
+  rabbitmq:
+    profiles: ["full"]
+    image: rabbitmq:3.13-management-alpine
+    container_name: java-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-dev123456}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  minio:
+    profiles: ["full"]
+    image: minio/minio:latest
+    container_name: java-minio
+    restart: unless-stopped
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-dev123456}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  mysql_data:
+  redis_data:
+  nacos_data:
+  rabbitmq_data:
+  minio_data:
